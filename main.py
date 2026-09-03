@@ -4,71 +4,105 @@ Author: M. Zidan Maulana
 Description: Simple NLP Text Classification using Scikit-learn & Naive Bayes.
 """
 
+import re
 import pandas as pd
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
 
-def train_spam_model():
-    # 1. DATASET LATIH (Training dataset)
-    data_sms = [
-        # Label 1: Spam / Penipuan
-        ("Selamat! Nomor Anda mendapatkan hadiah Rp 50 juta dari Tri. Hubungi wa.me/xxx", 1),
-        ("Butuh dana cepat tanpa jaminan? Pinjaman online bunga 0% klik link bit.ly/xxx", 1),
-        ("PROMO DEPOSIT slot gacor maxwin hari ini, bonus new member 100%", 1),
-        ("Info resmi PLN: ID pelanggan Anda menang undian Rp 10jt, klaim di xxx", 1),
-        ("Maaf Mengganggu Waktunya Pak/Ibu Kami Dari KOPERASI Menawarkan PINJAMAN-ONLINE 5jt Sampai 500jt Poses Cepat Bunga 2% Pertahun Info Whatsapp :0823-1757-2717", 1),
-        ("Hanya Kk & Ktp Sudah Bisa buat modal usaha dengan bunga% Min 5-500jt Melayani Seluruh Indonesia Minat WA:087844302111 tks...", 1),
-        ("Info Pinjaman Tunai Cepat Cair Dan Terpercaya Tampa Agunan Tampa Riba Info Chat WA:085248724234", 1),
-        # Label 0: SMS Normal / Ham
-        ("Zidan, jangan lupa kerjakan tugas RPL dan persiapkan projek minggu depan ya", 0),
-        ("Paket Anda sedang dibawa oleh kurir menuju ke alamat tujuan", 0),
-        ("Nanti sore nongkrong di warung kopi depan sekolah tidak?", 0),
-        ("Kuota internet Anda sisa 1GB. Segera lakukan isi ulang.", 0),
-        ("Zidan, kemarin ada tugas tidak dari pak Wali?", 0)
-    ]
+# Inisialisasi Stemmer dari Sastrawi
+factory = StemmerFactory()
+stemmer = factory.create_stemmer()
 
-    df = pd.DataFrame(data_sms, columns=["teks_sms", "label"])
-    X_train = df["teks_sms"]
-    Y_train = df["label"]
+def preprocess_text(text: str) -> str:
+    """Membersihkan teks: lowercase, hapus angka, hapus simbol, dan stemming."""
+    text = text.lower()
+    text = re.sub(r"\d+", "", text)
+    text = re.sub(r"[^\w\s]", "", text)
+    text = stemmer.stem(text)
+    return text
 
-    # 2. MODEL PIPELINE (TF-IDF Vectorizer + Naive-Bayes Clasifier)
-    model = make_pipeline(TfidfVectorizer(), MultinomialNB())
 
-    # 3. TRAINING MODEL
+def load_and_prepare_data(filepath: str):
+    """Membaca file CSV dan melakukan preprocessing pada seluruh dataset."""
+    print(f"[INFO] Membaca dataset dari {filepath}...")
+    try:
+        df = pd.read_csv(filepath)
+    except FileNotFoundError:
+        print(f"[ERROR] File {filepath} tidak ditemukan!")
+        return None, None
+
+    print("[INFO] Membersihkan dan memproses teks dengan Sastrawi...")
+    df["clean_teks"] = df["teks_sms"].apply(preprocess_text)
+
+    X = df["clean_teks"]
+    y = df["label"]
+    return X, y
+
+def train_model(X, y):
+    """Melatih model AI dan mengevaluasi akurasinya menggunakan Train-Test Split."""
+    # Split data 80% Latih, 20% Uji
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+
+    # Pipeline: TF-IDF (1-2 N-grams) + Naive Bayes Classifier
+    model = make_pipeline(
+        TfidfVectorizer(ngram_range=(1, 2)),
+        MultinomialNB(),
+    )
+
     print("[INFO] Melatih model AI...")
-    model.fit(X_train, Y_train)
-    print("[INFO] Pelatihan selesai!")
+    model.fit(X_train, y_train)
+
+    # Evaluasi Performa
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+
+    print(f"\n[EVALUASI] Akurasi Model: {acc * 100:.2f}%")
+    print("Detail Laporan Klasifikasi:")
+    print(
+        classification_report(
+            y_test, y_pred, target_names=["Normal", "Spam/Penipuan"]
+        )
+    )
 
     return model
 
-def predict_sms(model, text_list):
-    result = model.predict(text_list)
-    for text, pred in zip(text_list, result):
-        status = "PENIPUAN / SPAM" if pred == 1 else "SMS normal"
-        print(f"Pesan: \"{text}\"")
+
+def predict_sms(model, raw_text_list: list):
+    """Melakukan prediksi pada daftar pesan SMS baru."""
+    print("=" * 40)
+    print("=== HASIL UJI COBA REAL-TIME ===")
+
+    for text in raw_text_list:
+        cleaned_text = preprocess_text(text)
+        pred = model.predict([cleaned_text])[0]
+        status = "PENIPUAN / SPAM" if pred == 1 else "SMS NORMAL"
+
+        print(f"Pesan : \"{text}\"")
         print(f"Status: [{status}]\n")
 
+
+def main():
+    # 1. Load Data
+    X, y = load_and_prepare_data("dataset.csv")
+    if X is None or y is None:
+        return
+
+    # 2. Train Model
+    ai_model = train_model(X, y)
+
+    # 3. Predict / Test
+    data_uji = [
+        "Info resmi menang undian 50 juta dari Bank, klaim segera",
+        "Zidan, besok kumpul di perpustakaan jam 8 pagi ya",
+    ]
+    predict_sms(ai_model, data_uji)
+
+
 if __name__ == "__main__":
-    ai_model = train_spam_model()
-
-    play = True
-
-    while play:
-        tes = input("Apakah ingin melakukan uji coba? ")
-        if tes == "tidak" or tes == "tutup":
-            print("Terimakasih sudah bermain!")
-            play = False
-            break
-        else:
-            data1 = input("Masukkan teks uji coba 1 ")
-            data2 = input("Masukkan teks uji coba 2 ")
-
-        # data uji coba yang belum dilihat model
-        data_uji = [
-            data1,
-            data2
-        ]
-
-        print("==== HASIL UJI COBA AI ====")
-        predict_sms(ai_model, data_uji)
+    main()
