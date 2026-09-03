@@ -73,18 +73,42 @@ def train_model(X, y):
     return model
 
 
-def predict_sms(model, raw_text_list: list):
-    """Melakukan prediksi pada daftar pesan SMS baru."""
-    print("=" * 40)
-    print("=== HASIL UJI COBA REAL-TIME ===")
+def predict_single_text(model, raw_text: str) -> str:
+    """Memproses satu kalimat input dan mengembalikan status prediksi."""
+    cleaned_text = preprocess_text(raw_text)
+    pred = model.predict([cleaned_text])[0]
+    return "PENIPUAN / SPAM" if pred == 1 else "SMS NORMAL"
 
-    for text in raw_text_list:
-        cleaned_text = preprocess_text(text)
-        pred = model.predict([cleaned_text])[0]
-        status = "PENIPUAN / SPAM" if pred == 1 else "SMS NORMAL"
 
-        print(f"Pesan : \"{text}\"")
-        print(f"Status: [{status}]\n")
+def interactive_cli(model):
+    """Menu interaktif berbasis terminal untuk menguji input pengguna."""
+    print("=" * 50)
+    print("      DETEKTOR SMS PENIPUAN / SPAM (INDONESIA)      ")
+    print("=" * 50)
+    print("Ketik pesan SMS yang ingin kamu tes.")
+    print("Ketik 'keluar' atau 'exit' untuk menghentikan program.\n")
+
+    while True:
+        try:
+            user_input = input("Masukkan Teks SMS > ").strip()
+
+            # Kondisi keluar dari loop
+            if user_input.lower() in ["keluar", "exit"]:
+                print("\n[INFO] Terima kasih telah menggunakan program ini. Sampai jumpa!")
+                break
+
+            # Validasi jika input kosong
+            if not user_input:
+                print("[!] Teks tidak boleh kosong. Silakan coba lagi.\n")
+                continue
+
+            # Prediksi dan tampilkan hasil
+            status = predict_single_text(model, user_input)
+            print(f"-> Hasil Analisis AI: [{status}]\n")
+
+        except KeyboardInterrupt:
+            print("\n\n[INFO] Program dihentikan.")
+            break
 
 
 def main():
@@ -96,12 +120,8 @@ def main():
     # 2. Train Model
     ai_model = train_model(X, y)
 
-    # 3. Predict / Test
-    data_uji = [
-        "Info resmi menang undian 50 juta dari Bank, klaim segera",
-        "Zidan, besok kumpul di perpustakaan jam 8 pagi ya",
-    ]
-    predict_sms(ai_model, data_uji)
+    # 3. Jalankan CLI Interaktif
+    interactive_cli(ai_model)
 
 
 if __name__ == "__main__":
