@@ -52,11 +52,23 @@ def predict_sms(model, text_list):
 if __name__ == "__main__":
     ai_model = train_spam_model()
 
-    # data uji coba yang belum dilihat model
-    data_uji = [
-        "Dapatkan bonus deposit 100k di situs terpercaya kami",
-        "Zidan, besok ada jam pelajaran Pak Wali tidak?",
-    ]
+    play = True
 
-    print("==== HASIL UJI COBA AI ====")
-    predict_sms(ai_model, data_uji)
+    while play:
+        tes = input("Apakah ingin melakukan uji coba? ")
+        if tes == "tidak" or tes == "tutup":
+            print("Terimakasih sudah bermain!")
+            play = False
+            break
+        else:
+            data1 = input("Masukkan teks uji coba 1 ")
+            data2 = input("Masukkan teks uji coba 2 ")
+
+        # data uji coba yang belum dilihat model
+        data_uji = [
+            data1,
+            data2
+        ]
+
+        print("==== HASIL UJI COBA AI ====")
+        predict_sms(ai_model, data_uji)
