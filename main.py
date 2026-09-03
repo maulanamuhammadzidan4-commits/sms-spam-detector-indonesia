@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
+import cowsay
 
 # Inisialisasi Stemmer dari Sastrawi
 factory = StemmerFactory()
@@ -104,7 +105,7 @@ def interactive_cli(model):
 
             # Prediksi dan tampilkan hasil
             status = predict_single_text(model, user_input)
-            print(f"-> Hasil Analisis AI: [{status}]\n")
+            cowsay.cow(status)
 
         except KeyboardInterrupt:
             print("\n\n[INFO] Program dihentikan.")
