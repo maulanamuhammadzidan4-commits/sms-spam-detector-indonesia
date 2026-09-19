@@ -12,6 +12,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import make_pipeline
+import ux
 
 # Inisialisasi Stemmer dari Sastrawi
 factory = StemmerFactory()
@@ -28,14 +29,14 @@ def preprocess_text(text: str) -> str:
 
 def load_and_prepare_data(filepath: str):
     """Membaca file CSV dan melakukan preprocessing pada seluruh dataset."""
-    print(f"[INFO] Membaca dataset dari {filepath}...")
+    ux.muncul(f"[INFO] Membaca dataset dari {filepath}...")
     try:
         df = pd.read_csv(filepath)
     except FileNotFoundError:
         print(f"[ERROR] File {filepath} tidak ditemukan!")
         return None, None
 
-    print("[INFO] Membersihkan dan memproses teks dengan Sastrawi...")
+    ux.muncul("[INFO] Membersihkan dan memproses teks dengan Sastrawi...")
     df["clean_teks"] = df["teks_sms"].apply(preprocess_text)
 
     X = df["clean_teks"]
@@ -55,7 +56,7 @@ def train_model(X, y):
         MultinomialNB(),
     )
 
-    print("[INFO] Melatih model AI...")
+    ux.muncul("[INFO] Melatih model AI...")
     model.fit(X_train, y_train)
 
     # Evaluasi Performa
@@ -83,10 +84,10 @@ def predict_single_text(model, raw_text: str) -> str:
 def interactive_cli(model):
     """Menu interaktif berbasis terminal untuk menguji input pengguna."""
     print("=" * 50)
-    print("      DETEKTOR SMS PENIPUAN / SPAM (INDONESIA)      ")
+    ux.muncul("      DETEKTOR SMS PENIPUAN / SPAM (INDONESIA)      ")
     print("=" * 50)
-    print("Ketik pesan SMS yang ingin kamu tes.")
-    print("Ketik 'keluar' atau 'exit' untuk menghentikan program.\n")
+    ux.muncul("Ketik pesan SMS yang ingin kamu tes.")
+    ux.muncul("Ketik 'keluar' atau 'exit' untuk menghentikan program.\n")
 
     while True:
         try:
@@ -94,12 +95,12 @@ def interactive_cli(model):
 
             # Kondisi keluar dari loop
             if user_input.lower() in ["keluar", "exit"]:
-                print("\n[INFO] Terima kasih telah menggunakan program ini. Sampai jumpa!")
+                ux.muncul("\n[INFO] Terima kasih telah menggunakan program ini. Sampai jumpa!")
                 break
 
             # Validasi jika input kosong
             if not user_input:
-                print("[!] Teks tidak boleh kosong. Silakan coba lagi.\n")
+                ux.muncul("[!] Teks tidak boleh kosong. Silakan coba lagi.\n")
                 continue
 
             # Prediksi dan tampilkan hasil
@@ -107,7 +108,7 @@ def interactive_cli(model):
             print(f"-> Hasil Analisis AI: [{status}]\n")
 
         except KeyboardInterrupt:
-            print("\n\n[INFO] Program dihentikan.")
+            ux.muncul("\n\n[INFO] Program dihentikan.")
             break
 
 
